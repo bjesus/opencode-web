@@ -56,7 +56,7 @@ export default function MessageInput(props: MessageInputProps) {
 
   // Update model/agent selection when messages change
   const updateFromLastMessage = () => {
-    const lastMessage = currentMessages().findLast(m => m.info.role === 'assistant');
+    const lastMessage = [...currentMessages()].reverse().find((m: any) => m.info.role === 'assistant');
     if (lastMessage && 'modelID' in lastMessage.info) {
       setSelectedProvider(lastMessage.info.providerID);
       setSelectedModel(lastMessage.info.modelID);
@@ -123,10 +123,8 @@ export default function MessageInput(props: MessageInputProps) {
   const availableModels = () => {
     const provider = currentProvider();
     if (!provider) return [];
-    return Object.entries(provider.models).map(([id, model]) => ({
-      id,
-      name: model.name,
-    }));
+    const models = Object.entries(provider.models as Record<string, any>);
+    return models.map(([id, model]) => ({ id, name: (model as any).name }));
   };
 
   return (

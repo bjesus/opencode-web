@@ -11,5 +11,5 @@ export type {
   OpenCodeClient,
 } from './client';
 
-// Export commonly used part types
-export type { components } from '@opencode-ai/sdk';
+// SDK component types are not available in this env
+// export type { components } from '@opencode-ai/sdk';

@@ -1,8 +1,10 @@
 import type { Message, Part } from './types';
 
 export interface EventHandlers {
+  onMessageCreated?: (data: { info: Message }) => void;
   onMessageUpdate?: (data: { info: Message }) => void;
   onMessageRemoved?: (data: { sessionID: string; messageID: string }) => void;
+  onPartCreated?: (data: { part: Part }) => void;
   onPartUpdate?: (data: { part: Part }) => void;
   onSessionUpdate?: (data: { session: any }) => void;
 }
@@ -16,11 +18,19 @@ export async function subscribeToEvents(
       if (!event || !event.type) continue;
 
       switch (event.type) {
+        case 'message.created':
+          handlers.onMessageCreated?.(event.properties);
+          handlers.onMessageUpdate?.(event.properties);
+          break;
         case 'message.updated':
           handlers.onMessageUpdate?.(event.properties);
           break;
         case 'message.removed':
           handlers.onMessageRemoved?.(event.properties);
+          break;
+        case 'message.part.created':
+          handlers.onPartCreated?.(event.properties);
+          handlers.onPartUpdate?.(event.properties);
           break;
         case 'message.part.updated':
           handlers.onPartUpdate?.(event.properties);

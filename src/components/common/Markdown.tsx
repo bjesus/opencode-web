@@ -13,11 +13,12 @@ interface MarkdownProps {
   content: string;
 }
 
-marked.setOptions({
-  highlight: (code, lang) => {
-    if (lang && Prism.languages[lang]) {
+// Configure marked with Prism highlighting; cast to any for type compat
+(marked as any).setOptions({
+  highlight: (code: string, lang?: string) => {
+    if (lang && (Prism as any).languages[lang]) {
       try {
-        return Prism.highlight(code, Prism.languages[lang], lang);
+        return Prism.highlight(code, (Prism as any).languages[lang], lang);
       } catch (e) {
         console.error('Prism highlight error:', e);
       }
@@ -25,10 +26,9 @@ marked.setOptions({
     return code;
   },
   breaks: true,
-});
+} as any);
 
 export default function Markdown(props: MarkdownProps) {
-  const html = () => marked(props.content);
-
+  const html = () => ((marked as any).parse(props.content) as string);
   return <div innerHTML={html()} class="markdown-content" />;
 }

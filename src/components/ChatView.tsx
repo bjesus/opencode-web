@@ -1,4 +1,4 @@
-import { For, Show, createEffect } from 'solid-js';
+import { For, Show, createEffect, onCleanup, onMount } from 'solid-js';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { OpenCodeClient } from '../api/client';
 import { currentMessages, currentSession } from '../stores/session';
@@ -17,21 +17,71 @@ export default function ChatView(_props: ChatViewProps) {
     },
     getScrollElement: () => scrollRef || null,
     estimateSize: () => 200,
-    overscan: 5,
+    overscan: 8,
     getItemKey: (index) => currentMessages()[index]?.info.id || index,
-    measureElement: (element) => element.getBoundingClientRect().height,
+    // Measure using offsetHeight for stable sizing
+    measureElement: (element) => (element as HTMLElement).offsetHeight,
   });
 
+  // Re-measure and scroll on message length changes
   createEffect(() => {
-    const messages = currentMessages();
-    if (messages.length > 0) {
-      setTimeout(() => {
-        if (scrollRef) {
-          scrollRef.scrollTop = scrollRef.scrollHeight;
-        }
-      }, 100);
+    const len = currentMessages().length;
+    if (len > 0) {
+      requestAnimationFrame(() => {
+        virtualizer.measure();
+        requestAnimationFrame(() => {
+          virtualizer.measure();
+          if (scrollRef) scrollRef.scrollTop = scrollRef.scrollHeight;
+        });
+      });
     }
   });
+
+  // Per-row component with ResizeObserver to remeasure on content changes
+  function Row(props: { index: number; start: number; key: string; message: any }) {
+    let refEl: HTMLDivElement | undefined;
+    let ro: ResizeObserver | undefined;
+
+    onMount(() => {
+      if (refEl) {
+        // Post-paint remeasures to catch async content growth
+        requestAnimationFrame(() => {
+          if (refEl) virtualizer.measureElement(refEl);
+          requestAnimationFrame(() => {
+            if (refEl) virtualizer.measureElement(refEl);
+          });
+        });
+        // Observe size changes (e.g., markdown highlight, images loading)
+        ro = new ResizeObserver(() => {
+          if (refEl) virtualizer.measureElement(refEl);
+        });
+        ro.observe(refEl);
+      }
+    });
+
+    onCleanup(() => {
+      if (ro && refEl) ro.unobserve(refEl);
+      ro?.disconnect();
+    });
+
+    return (
+      <div
+        ref={(el) => (refEl = el)}
+        data-index={props.index}
+        data-key={props.key}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          transform: `translateY(${props.start}px)`,
+          display: 'flow-root', // prevent margin-collapsing
+        }}
+      >
+        <MessageItem message={props.message} />
+      </div>
+    );
+  }
 
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
@@ -43,10 +93,7 @@ export default function ChatView(_props: ChatViewProps) {
         </div>
       </Show>
 
-      <div
-        ref={scrollRef}
-        class="flex-1 overflow-y-auto overflow-x-hidden"
-      >
+      <div ref={scrollRef} class="flex-1 overflow-y-auto overflow-x-hidden">
         <Show
           when={currentMessages().length > 0}
           fallback={
@@ -66,25 +113,14 @@ export default function ChatView(_props: ChatViewProps) {
             }}
           >
             <For each={virtualizer.getVirtualItems()}>
-              {(virtualRow) => {
-                const message = currentMessages()[virtualRow.index];
-                return (
-                  <div
-                    data-index={virtualRow.index}
-                    data-key={virtualRow.key}
-                    ref={(el) => virtualizer.measureElement(el)}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                  >
-                    <MessageItem message={message} />
-                  </div>
-                );
-              }}
+              {(row) => (
+                <Row
+                  index={row.index}
+                  start={row.start}
+                  key={String(row.key)}
+                  message={currentMessages()[row.index]}
+                />
+              )}
             </For>
           </div>
         </Show>

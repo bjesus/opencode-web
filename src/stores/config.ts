@@ -24,14 +24,19 @@ const defaultConfig: Config = {
 
 function loadConfig(): Config {
   const stored = localStorage.getItem(STORAGE_KEY);
+  let cfg = defaultConfig;
   if (stored) {
     try {
-      return { ...defaultConfig, ...JSON.parse(stored) };
+      cfg = { ...defaultConfig, ...JSON.parse(stored) };
     } catch (e) {
       console.error('Failed to parse stored config:', e);
     }
   }
-  return defaultConfig;
+  const fromEnv = (import.meta as any).env?.VITE_API_DEFAULT as string | undefined;
+  if (!cfg.apiEndpoint && fromEnv) {
+    cfg = { ...cfg, apiEndpoint: fromEnv };
+  }
+  return cfg;
 }
 
 function saveConfig(config: Config) {

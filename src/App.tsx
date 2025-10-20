@@ -3,7 +3,6 @@ import { config } from "./stores/config";
 import { createClient, type OpenCodeClient } from "./api/client";
 import { subscribeToEvents } from "./api/sse";
 import {
-  sessions,
   setSessions,
   currentSessionId,
   setCurrentSessionId,
@@ -19,7 +18,6 @@ import Settings from "./components/Settings";
 export default function App() {
   const [api, setApi] = createSignal<OpenCodeClient | null>(null);
   const [showSettings, setShowSettings] = createSignal(false);
-  let eventSource: EventSource | null = null;
 
   onMount(async () => {
     const endpoint = config().apiEndpoint;
@@ -48,11 +46,18 @@ export default function App() {
         }
       }
 
-      const { data: eventStream } = await client.event.subscribe();
-      if (eventStream) {
-        subscribeToEvents(eventStream.stream, {
+      const sub: any = await client.event.subscribe();
+      const stream = sub?.data?.stream ?? sub?.stream;
+      if (stream) {
+        subscribeToEvents(stream, {
+          onMessageCreated: (data) => {
+            updateMessage(data.info.sessionID, data.info.id, data.info);
+          },
           onMessageUpdate: (data) => {
             updateMessage(data.info.sessionID, data.info.id, data.info);
+          },
+          onPartCreated: (data) => {
+            updatePart(data.part.sessionID, data.part.messageID, data.part);
           },
           onPartUpdate: (data) => {
             updatePart(data.part.sessionID, data.part.messageID, data.part);

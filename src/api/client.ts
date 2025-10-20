@@ -1,15 +1,15 @@
 import { createOpencodeClient } from '@opencode-ai/sdk';
-import type { components } from '@opencode-ai/sdk';
+// Note: types fallback to any in this build env
 
 export type OpenCodeClient = ReturnType<typeof createOpencodeClient>;
 
-export type Session = components['schemas']['Session'];
-export type Message = components['schemas']['Message'];
-export type Part = components['schemas']['Part'];
-export type Provider = components['schemas']['Provider'];
-export type Agent = components['schemas']['Agent'];
-export type AssistantMessage = components['schemas']['AssistantMessage'];
-export type UserMessage = components['schemas']['UserMessage'];
+export type Session = any;
+export type Message = any;
+export type Part = any;
+export type Provider = any;
+export type Agent = any;
+export type AssistantMessage = any;
+export type UserMessage = any;
 
 export interface MessageWithParts {
   info: Message;

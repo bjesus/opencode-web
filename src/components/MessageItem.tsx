@@ -1,5 +1,5 @@
 import { For, Show, Match, Switch } from 'solid-js';
-import type { MessageWithParts, Part } from '../api/types';
+import type { MessageWithParts } from '../api/types';
 import Markdown from './common/Markdown';
 
 interface MessageItemProps {
@@ -67,7 +67,7 @@ export default function MessageItem(props: MessageItemProps) {
                       </summary>
                       <div class="collapse-content">
                         <div class="prose max-w-none">
-                          <Markdown content={(part as any).text} />
+                      <Markdown content={(part as any).text} />
                         </div>
                       </div>
                     </details>
@@ -122,7 +122,18 @@ export default function MessageItem(props: MessageItemProps) {
 
             <Show when={'tokens' in props.message.info && props.message.info.tokens}>
               <div class="text-xs text-base-content/60 mt-2">
-                {formatTokens((props.message.info as any).tokens)} • {formatCost((props.message.info as any).cost)}
+                {/* model/mode • tokens • cost */}
+                {(() => {
+                  const info: any = props.message.info as any;
+                  const model = info?.providerID && info?.modelID ? `${info.providerID}/${info.modelID}` : undefined;
+                  const mode = info?.mode;
+                  const parts: string[] = [];
+                  if (model || mode) parts.push([model, mode].filter(Boolean).join(' '));
+                  const toks = formatTokens(info.tokens);
+                  if (toks) parts.push(toks);
+                  if (typeof info.cost === 'number') parts.push(formatCost(info.cost));
+                  return parts.join(' • ');
+                })()}
               </div>
             </Show>
           </div>
