@@ -1,4 +1,4 @@
-import { For, Show, createEffect, onCleanup, onMount } from 'solid-js';
+import { For, Show, createEffect, onCleanup, onMount, createSignal } from 'solid-js';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { OpenCodeClient } from '../api/client';
 import { currentMessages, currentSession } from '../stores/session';
@@ -10,6 +10,18 @@ interface ChatViewProps {
 
 export default function ChatView(_props: ChatViewProps) {
   let scrollRef: HTMLDivElement | undefined;
+  const [atBottom, setAtBottom] = createSignal(true);
+
+  const updateAtBottom = () => {
+    if (!scrollRef) return;
+    const delta = scrollRef.scrollHeight - (scrollRef.scrollTop + scrollRef.clientHeight);
+    setAtBottom(delta <= 8);
+  };
+
+  const scrollToBottom = () => {
+    if (!scrollRef) return;
+    scrollRef.scrollTo({ top: scrollRef.scrollHeight, behavior: 'smooth' });
+  };
 
   const virtualizer = createVirtualizer({
     get count() {
@@ -23,7 +35,7 @@ export default function ChatView(_props: ChatViewProps) {
     measureElement: (element) => (element as HTMLElement).offsetHeight,
   });
 
-  // Re-measure and scroll on message length changes
+  // Re-measure on message length change; auto-scroll only if already at bottom
   createEffect(() => {
     const len = currentMessages().length;
     if (len > 0) {
@@ -31,7 +43,8 @@ export default function ChatView(_props: ChatViewProps) {
         virtualizer.measure();
         requestAnimationFrame(() => {
           virtualizer.measure();
-          if (scrollRef) scrollRef.scrollTop = scrollRef.scrollHeight;
+          if (atBottom() && scrollRef) scrollRef.scrollTop = scrollRef.scrollHeight;
+          updateAtBottom();
         });
       });
     }
@@ -84,7 +97,7 @@ export default function ChatView(_props: ChatViewProps) {
   }
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="h-full flex flex-col overflow-hidden">
       <Show when={currentSession()}>
         <div class="bg-base-200 px-4 py-3 border-b border-base-300 flex items-center justify-between">
           <h1 class="text-lg font-semibold truncate flex-1">
@@ -93,7 +106,8 @@ export default function ChatView(_props: ChatViewProps) {
         </div>
       </Show>
 
-      <div ref={scrollRef} class="flex-1 overflow-y-auto overflow-x-hidden">
+      <div class="relative flex-1 min-h-0">
+        <div ref={scrollRef} class="h-full overflow-y-auto overflow-x-hidden" onScroll={updateAtBottom}>
         <Show
           when={currentMessages().length > 0}
           fallback={
@@ -122,6 +136,14 @@ export default function ChatView(_props: ChatViewProps) {
                 />
               )}
             </For>
+          </div>
+        </Show>
+        </div>
+        <Show when={!atBottom()}>
+          <div class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+            <button class="btn btn-primary btn-sm shadow pointer-events-auto" onClick={scrollToBottom}>
+              Latest
+            </button>
           </div>
         </Show>
       </div>

@@ -4,37 +4,41 @@
   "description": "Web interface for OpenCode",
   "type": "module",
   "engines": {
-    "node": ">=20.19.0 || >=22.12.0"
+    "node": ">=25.0.0"
   },
   "scripts": {
     "dev": "vite",
     "dev:frontend": "vite",
     "dev:proxy": "tsx server/proxy.ts",
+    "dev:proxy:here": "OPENCODE_SERVE_CWD=$PWD tsx server/proxy.ts",
     "build": "vite build",
     "build:cf": "vite build --mode cloudflare",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "^0.15.8",
-    "@solidjs/router": "^0.10.10",
+    "@opencode-ai/sdk": "^0.16.0",
+    "@solidjs/router": "^0.11.0",
     "@tanstack/solid-virtual": "^3.13.12",
-    "marked": "^11.1.1",
+    "marked": "^13.0.0",
     "prismjs": "^1.29.0",
-    "solid-js": "^1.8.11"
+    "solid-js": "^1.9.0"
+  },
+  "bin": {
+    "opencode-web-proxy": "server/proxy.mjs"
   },
   "devDependencies": {
-    "@types/node": "^20.10.6",
+    "@types/node": "^22.7.4",
     "@types/prismjs": "^1.26.3",
-    "autoprefixer": "^10.4.16",
-    "daisyui": "^4.6.0",
-    "express": "^4.18.2",
-    "http-proxy-middleware": "^2.0.6",
-    "playwright": "^1.56.1",
-    "postcss": "^8.4.33",
-    "tailwindcss": "^3.4.1",
-    "tsx": "^4.7.0",
-    "typescript": "^5.3.3",
-    "vite": "^7.1.11",
-    "vite-plugin-solid": "^2.8.2"
+    "autoprefixer": "^10.4.20",
+    "daisyui": "^4.12.10",
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0",
+    "playwright": "^1.48.2",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "tsx": "^4.16.2",
+    "typescript": "^5.6.2",
+    "vite": "^7.2.0",
+    "vite-plugin-solid": "^2.10.2"
   }
 }

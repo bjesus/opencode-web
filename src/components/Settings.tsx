@@ -41,9 +41,8 @@ export default function Settings(props: SettingsProps) {
   };
 
   return (
-    <div class="h-screen flex items-center justify-center bg-base-100 p-4">
-      <div class="card w-full max-w-lg bg-base-200 shadow-xl">
-        <div class="card-body">
+    <div class="card w-full max-w-lg bg-base-200 shadow-xl">
+      <div class="card-body">
           <h2 class="card-title text-2xl mb-4">OpenCode Settings</h2>
           
           <div class="form-control w-full">
@@ -105,7 +104,7 @@ export default function Settings(props: SettingsProps) {
           <div class="card-actions justify-end mt-4">
             {config().apiEndpoint && (
               <button class="btn btn-ghost" onClick={props.onClose}>
-                Cancel
+                Close
               </button>
             )}
             <button class="btn btn-primary" onClick={handleSave}>
@@ -114,6 +113,5 @@ export default function Settings(props: SettingsProps) {
           </div>
         </div>
       </div>
-    </div>
   );
 }

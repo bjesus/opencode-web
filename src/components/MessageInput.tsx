@@ -1,29 +1,33 @@
-import { createSignal, onMount, createEffect, Show, For } from 'solid-js';
-import type { OpenCodeClient, Provider, Agent } from '../api/client';
-import { currentSessionId, currentMessages, isSending, setIsSending } from '../stores/session';
+import { createSignal, onMount, createEffect, Show, For } from "solid-js";
+import type { OpenCodeClient, Provider, Agent } from "../api/client";
+import {
+  currentSessionId,
+  currentMessages,
+  isSending,
+  setIsSending,
+} from "../stores/session";
 
 interface MessageInputProps {
   api: OpenCodeClient | null;
 }
 
 export default function MessageInput(props: MessageInputProps) {
-  const [message, setMessage] = createSignal('');
+  const [message, setMessage] = createSignal("");
   const [providers, setProviders] = createSignal<Provider[]>([]);
   const [agents, setAgents] = createSignal<Agent[]>([]);
-  const [selectedProvider, setSelectedProvider] = createSignal<string>('');
-  const [selectedModel, setSelectedModel] = createSignal<string>('');
-  const [selectedAgent, setSelectedAgent] = createSignal<string>('');
-  
+  const [selectedProvider, setSelectedProvider] = createSignal<string>("");
+  const [selectedModel, setSelectedModel] = createSignal<string>("");
+  const [selectedAgent, setSelectedAgent] = createSignal<string>("");
+
   let textareaRef: HTMLTextAreaElement | undefined;
 
   onMount(async () => {
     if (!props.api) return;
 
     try {
-      const [{ data: providersData }, { data: agentsData }] = await Promise.all([
-        props.api.config.providers(),
-        props.api.app.agents(),
-      ]);
+      const [{ data: providersData }, { data: agentsData }] = await Promise.all(
+        [props.api.config.providers(), props.api.app.agents()],
+      );
 
       if (providersData) {
         setProviders(providersData.providers);
@@ -31,7 +35,7 @@ export default function MessageInput(props: MessageInputProps) {
         if (providersData.providers.length > 0) {
           const defaultProvider = providersData.providers[0];
           setSelectedProvider(defaultProvider.id);
-          
+
           const models = Object.keys(defaultProvider.models);
           if (models.length > 0) {
             setSelectedModel(models[0]);
@@ -40,24 +44,26 @@ export default function MessageInput(props: MessageInputProps) {
       }
 
       if (agentsData) {
-        setAgents(agentsData.filter(a => a.mode !== 'subagent'));
+        setAgents(agentsData.filter((a) => a.mode !== "subagent"));
 
         if (agentsData.length > 0) {
-          const buildAgent = agentsData.find(a => a.name === 'build');
+          const buildAgent = agentsData.find((a) => a.name === "build");
           setSelectedAgent(buildAgent?.name || agentsData[0].name);
         }
       }
 
       updateFromLastMessage();
     } catch (error) {
-      console.error('Failed to load models/agents:', error);
+      console.error("Failed to load models/agents:", error);
     }
   });
 
   // Update model/agent selection when messages change
   const updateFromLastMessage = () => {
-    const lastMessage = [...currentMessages()].reverse().find((m: any) => m.info.role === 'assistant');
-    if (lastMessage && 'modelID' in lastMessage.info) {
+    const lastMessage = [...currentMessages()]
+      .reverse()
+      .find((m: any) => m.info.role === "assistant");
+    if (lastMessage && "modelID" in lastMessage.info) {
       setSelectedProvider(lastMessage.info.providerID);
       setSelectedModel(lastMessage.info.modelID);
       setSelectedAgent(lastMessage.info.mode);
@@ -68,7 +74,7 @@ export default function MessageInput(props: MessageInputProps) {
     // Watch for changes in current session or messages
     const sessionId = currentSessionId();
     const messages = currentMessages();
-    
+
     if (sessionId && messages.length > 0) {
       updateFromLastMessage();
     }
@@ -80,7 +86,7 @@ export default function MessageInput(props: MessageInputProps) {
     }
 
     const text = message().trim();
-    setMessage('');
+    setMessage("");
     setIsSending(true);
 
     try {
@@ -94,15 +100,15 @@ export default function MessageInput(props: MessageInputProps) {
           agent: selectedAgent(),
           parts: [
             {
-              type: 'text',
+              type: "text",
               text,
             },
           ],
         },
       });
     } catch (error) {
-      console.error('Failed to send message:', error);
-      alert('Failed to send message');
+      console.error("Failed to send message:", error);
+      alert("Failed to send message");
       setMessage(text);
     } finally {
       setIsSending(false);
@@ -110,14 +116,14 @@ export default function MessageInput(props: MessageInputProps) {
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
   const currentProvider = () => {
-    return providers().find(p => p.id === selectedProvider());
+    return providers().find((p) => p.id === selectedProvider());
   };
 
   const availableModels = () => {
@@ -143,7 +149,9 @@ export default function MessageInput(props: MessageInputProps) {
             }}
           >
             <For each={providers()}>
-              {(provider) => <option value={provider.id}>{provider.name}</option>}
+              {(provider) => (
+                <option value={provider.id}>{provider.name}</option>
+              )}
             </For>
           </select>
 
@@ -165,7 +173,8 @@ export default function MessageInput(props: MessageInputProps) {
             <For each={agents()}>
               {(agent) => (
                 <option value={agent.name}>
-                  {agent.name} {agent.description ? `- ${agent.description}` : ''}
+                  {agent.name}{" "}
+                  {agent.description ? `- ${agent.description}` : ""}
                 </option>
               )}
             </For>

@@ -14,10 +14,27 @@ import SessionList from "./components/SessionList";
 import ChatView from "./components/ChatView";
 import MessageInput from "./components/MessageInput";
 import Settings from "./components/Settings";
+import { addSession } from "./stores/session";
 
 export default function App() {
   const [api, setApi] = createSignal<OpenCodeClient | null>(null);
   const [showSettings, setShowSettings] = createSignal(false);
+
+  const handleCreateSession = async () => {
+    const client = api();
+    if (!client) return;
+    try {
+      const { data: session } = await client.session.create({ body: {} });
+      if (session) {
+        addSession(session);
+        setCurrentSessionId(session.id);
+        setSessionMessages(session.id, []);
+      }
+    } catch (e) {
+      console.error("Failed to create session:", e);
+      alert("Failed to create session");
+    }
+  };
 
   onMount(async () => {
     const endpoint = config().apiEndpoint;
@@ -77,76 +94,88 @@ export default function App() {
 
   return (
     <div class="h-screen flex flex-col bg-base-100">
-      <Show
-        when={!showSettings() && config().apiEndpoint}
-        fallback={<Settings onClose={() => setShowSettings(false)} />}
-      >
-        <div class="drawer lg:drawer-open h-full">
-          <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+      <div class="drawer lg:drawer-open h-full">
+        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
 
-          <div class="drawer-content flex flex-col max-h-screen">
-            <div class="navbar bg-base-200 lg:hidden">
-              <div class="flex-none">
-                <label for="drawer-toggle" class="btn btn-square btn-ghost">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    class="inline-block w-6 h-6 stroke-current"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    ></path>
-                  </svg>
-                </label>
-              </div>
-              <div class="flex-1">
-                <span class="text-lg font-bold">OpenCode</span>
-              </div>
-              <div class="flex-none">
-                <button
-                  class="btn btn-square btn-ghost"
-                  onClick={() => setShowSettings(true)}
+        <div class="drawer-content flex flex-col max-h-dvh">
+          <div class="navbar bg-base-200 lg:hidden">
+            <div class="flex-none">
+              <label for="drawer-toggle" class="btn btn-square btn-ghost">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  class="inline-block w-6 h-6 stroke-current"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    class="inline-block w-6 h-6 stroke-current"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    ></path>
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </label>
             </div>
-
-            <div class="flex-1 flex flex-col overflow-hidden">
-              <ChatView api={api()} />
-              <Show when={currentSessionId()}>
-                <MessageInput api={api()} />
-              </Show>
+            <div class="flex-1">
+              <span class="text-lg font-bold">OpenCode</span>
+            </div>
+            <div class="flex-none flex items-center gap-1">
+              <button
+                class="btn btn-ghost btn-sm"
+                onClick={handleCreateSession}
+              >
+                + New
+              </button>
+              <button
+                class="btn btn-square btn-ghost"
+                onClick={() => setShowSettings(true)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  class="inline-block w-6 h-6 stroke-current"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="drawer-side">
-            <label for="drawer-toggle" class="drawer-overlay"></label>
-            <div class="w-80 h-full bg-base-200 flex flex-col">
-              <div class="p-4 flex justify-between items-center border-b border-base-300">
-                <h2 class="text-xl font-bold">OpenCode</h2>
+          <div class="grid grid-rows-[1fr_auto] min-h-0 overflow-hidden">
+            <div class="min-h-0 overflow-hidden">
+              <ChatView api={api()} />
+            </div>
+            <Show when={currentSessionId()}>
+              <MessageInput api={api()} />
+            </Show>
+          </div>
+        </div>
+
+        <div class="drawer-side">
+          <label for="drawer-toggle" class="drawer-overlay"></label>
+          <div class="w-80 h-full bg-base-200 flex flex-col">
+            <div class="p-4 flex justify-between items-center border-b border-base-300">
+              <h2 class="text-xl font-bold">OpenCode</h2>
+              <div class="flex items-center gap-1">
+                <button
+                  class="btn btn-ghost btn-sm hidden lg:flex"
+                  onClick={handleCreateSession}
+                  title="New Session"
+                >
+                  + New
+                </button>
                 <button
                   class="btn btn-square btn-ghost btn-sm hidden lg:flex"
                   onClick={() => setShowSettings(true)}
@@ -163,21 +192,29 @@ export default function App() {
                       stroke-linejoin="round"
                       stroke-width="2"
                       d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    ></path>
+                    />
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    ></path>
+                    />
                   </svg>
                 </button>
               </div>
-              <SessionList api={api()} />
             </div>
+
+            <SessionList api={api()} />
           </div>
         </div>
-      </Show>
+        <Show when={showSettings()}>
+          <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div class="max-h-[90vh] overflow-auto">
+              <Settings onClose={() => setShowSettings(false)} />
+            </div>
+          </div>
+        </Show>
+      </div>
     </div>
   );
 }

@@ -155,19 +155,7 @@ export default function SessionList(props: SessionListProps) {
 
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
-      <div class="p-4 border-b border-base-300">
-        <button
-          class="btn btn-primary btn-block"
-          onClick={handleCreateSession}
-          disabled={isCreating()}
-        >
-          {isCreating() ? (
-            <span class="loading loading-spinner loading-sm"></span>
-          ) : (
-            '+ New Session'
-          )}
-        </button>
-      </div>
+
 
       <div class="flex-1 overflow-y-auto">
         <For each={sessions()}>
