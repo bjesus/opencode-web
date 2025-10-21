@@ -1,7 +1,8 @@
 import { Show, onMount, onCleanup, createSignal } from "solid-js";
 import { config } from "./stores/config";
 import { createClient, type OpenCodeClient } from "./api/client";
-import { subscribeToEvents } from "./api/sse";
+import { subscribeToEvents, type EventHandlers } from "./api/sse";
+import type { Message, Part } from "./api/types";
 import {
   setSessions,
   currentSessionId,
@@ -20,6 +21,12 @@ export default function App() {
   const [api, setApi] = createSignal<OpenCodeClient | null>(null);
   const [showSettings, setShowSettings] = createSignal(false);
 
+  let eventStreamAbort: AbortController | null = null;
+  let reconnectWake: (() => void) | null = null;
+  let eventLoopStopped = false;
+  let hasConnectedToEvents = false;
+  let connectionErrorNotified = false;
+
   const handleCreateSession = async () => {
     const client = api();
     if (!client) return;
@@ -36,7 +43,119 @@ export default function App() {
     }
   };
 
-  onMount(async () => {
+  const startEventStream = (client: OpenCodeClient) => {
+    const handlers = {
+      onMessageCreated: (data: { info: Message }) => {
+        updateMessage(data.info.sessionID, data.info.id, data.info);
+      },
+      onMessageUpdate: (data: { info: Message }) => {
+        updateMessage(data.info.sessionID, data.info.id, data.info);
+      },
+      onPartCreated: (data: { part: Part }) => {
+        updatePart(data.part.sessionID, data.part.messageID, data.part);
+      },
+      onPartUpdate: (data: { part: Part }) => {
+        updatePart(data.part.sessionID, data.part.messageID, data.part);
+      },
+    } satisfies EventHandlers;
+
+    const loadSessions = async (signal: AbortSignal) => {
+      const { data: sessionList } = await client.session.list({ signal });
+      if (!sessionList) throw new Error("Failed to fetch sessions");
+
+      const sortedSessions = [...sessionList].sort(
+        (a, b) => b.time.updated - a.time.updated,
+      );
+      setSessions(sortedSessions);
+
+      let targetId = currentSessionId();
+      if (
+        !targetId ||
+        !sortedSessions.some((session) => session.id === targetId)
+      ) {
+        targetId = sortedSessions[0]?.id ?? null;
+        setCurrentSessionId(targetId ?? null);
+      }
+
+      if (targetId) {
+        const { data: msgs } = await client.session.messages({
+          path: { id: targetId },
+          signal,
+        });
+        setSessionMessages(targetId, msgs ?? []);
+      }
+    };
+
+    const baseDelay = 1000;
+    const maxDelay = 30000;
+
+    void (async () => {
+      let attempt = 0;
+      while (!eventLoopStopped) {
+        try {
+          const loadController = new AbortController();
+          eventStreamAbort = loadController;
+          await loadSessions(loadController.signal);
+          eventStreamAbort = null;
+
+          const controller = new AbortController();
+          eventStreamAbort = controller;
+          const sub: any = await client.event.subscribe({
+            signal: controller.signal,
+          });
+          const stream = sub?.data?.stream ?? sub?.stream;
+          if (!stream) {
+            throw new Error("Event subscription did not include a stream");
+          }
+
+          hasConnectedToEvents = true;
+          connectionErrorNotified = false;
+          attempt = 0;
+          await subscribeToEvents(stream, handlers);
+
+          if (eventLoopStopped) {
+            break;
+          }
+
+          console.info("Event stream ended; attempting to reconnect...");
+        } catch (error) {
+          if (eventLoopStopped) {
+            break;
+          }
+          if ((error as any)?.name === "AbortError") {
+            break;
+          }
+          if (!hasConnectedToEvents && !connectionErrorNotified) {
+            connectionErrorNotified = true;
+            setShowSettings(true);
+          }
+          attempt = Math.min(attempt + 1, 5);
+          console.warn("Event stream interrupted, retrying shortly...", error);
+        } finally {
+          eventStreamAbort = null;
+        }
+
+        if (eventLoopStopped) {
+          break;
+        }
+
+        const delay = Math.min(baseDelay * 2 ** attempt, maxDelay);
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            reconnectWake = null;
+            resolve();
+          }, delay);
+          reconnectWake = () => {
+            clearTimeout(timeout);
+            reconnectWake = null;
+            resolve();
+          };
+        });
+      }
+    })();
+  };
+
+  onMount(() => {
     const endpoint = config().apiEndpoint;
 
     if (!endpoint) {
@@ -46,50 +165,19 @@ export default function App() {
 
     const client = createClient(endpoint);
     setApi(client);
-
-    try {
-      const { data: sessionList } = await client.session.list();
-      if (!sessionList) throw new Error("Failed to fetch sessions");
-
-      setSessions(sessionList.sort((a, b) => b.time.updated - a.time.updated));
-
-      if (sessionList.length > 0) {
-        setCurrentSessionId(sessionList[0].id);
-        const { data: msgs } = await client.session.messages({
-          path: { id: sessionList[0].id },
-        });
-        if (msgs) {
-          setSessionMessages(sessionList[0].id, msgs);
-        }
-      }
-
-      const sub: any = await client.event.subscribe();
-      const stream = sub?.data?.stream ?? sub?.stream;
-      if (stream) {
-        subscribeToEvents(stream, {
-          onMessageCreated: (data) => {
-            updateMessage(data.info.sessionID, data.info.id, data.info);
-          },
-          onMessageUpdate: (data) => {
-            updateMessage(data.info.sessionID, data.info.id, data.info);
-          },
-          onPartCreated: (data) => {
-            updatePart(data.part.sessionID, data.part.messageID, data.part);
-          },
-          onPartUpdate: (data) => {
-            updatePart(data.part.sessionID, data.part.messageID, data.part);
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Failed to initialize:", error);
-      alert("Failed to connect to OpenCode API. Please check your settings.");
-      setShowSettings(true);
-    }
+    eventLoopStopped = false;
+    reconnectWake = null;
+    hasConnectedToEvents = false;
+    connectionErrorNotified = false;
+    startEventStream(client);
   });
 
   onCleanup(() => {
-    // Event stream cleanup handled by SDK
+    eventLoopStopped = true;
+    eventStreamAbort?.abort();
+    reconnectWake?.();
+    eventStreamAbort = null;
+    reconnectWake = null;
   });
 
   return (
@@ -153,7 +241,7 @@ export default function App() {
             </div>
           </div>
 
-          <div class="grid grid-rows-[1fr_auto] min-h-0 overflow-hidden">
+          <div class="grid grid-rows-[1fr_auto] h-dvh overflow-hidden">
             <div class="min-h-0 overflow-hidden">
               <ChatView api={api()} />
             </div>

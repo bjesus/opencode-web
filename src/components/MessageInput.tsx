@@ -138,7 +138,7 @@ export default function MessageInput(props: MessageInputProps) {
       <div class="max-w-4xl mx-auto space-y-3">
         <div class="flex gap-2 flex-wrap">
           <select
-            class="select select-bordered select-sm flex-1 min-w-[150px]"
+            class="select select-sm basis-full sm:flex-1 sm:basis-0 min-w-[150px] max-w-none"
             value={selectedProvider()}
             onChange={(e) => {
               setSelectedProvider(e.currentTarget.value);
@@ -156,7 +156,7 @@ export default function MessageInput(props: MessageInputProps) {
           </select>
 
           <select
-            class="select select-bordered select-sm flex-1 min-w-[150px]"
+            class="select select-sm basis-full sm:flex-1 sm:basis-0 min-w-[150px] max-w-none"
             value={selectedModel()}
             onChange={(e) => setSelectedModel(e.currentTarget.value)}
           >
@@ -166,7 +166,7 @@ export default function MessageInput(props: MessageInputProps) {
           </select>
 
           <select
-            class="select select-bordered select-sm flex-1 min-w-[150px]"
+            class="select select-sm basis-full sm:flex-1 sm:basis-0 min-w-[150px] max-w-none"
             value={selectedAgent()}
             onChange={(e) => setSelectedAgent(e.currentTarget.value)}
           >
@@ -184,7 +184,7 @@ export default function MessageInput(props: MessageInputProps) {
         <div class="flex gap-2">
           <textarea
             ref={textareaRef}
-            class="textarea textarea-bordered flex-1 min-h-[60px] max-h-[200px]"
+            class="textarea flex-1 min-h-[60px] max-h-[200px] w-full"
             placeholder="Type a message... (Shift+Enter for new line)"
             value={message()}
             onInput={(e) => setMessage(e.currentTarget.value)}

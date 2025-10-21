@@ -1,12 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import "tailwindcss";
+@plugin "daisyui";
 
 html,
 body,
@@ -87,4 +80,8 @@ body,
 
 .markdown-content hr {
   @apply my-4 border-base-300;
+}
+
+select {
+  padding: 0 1rem;
 }

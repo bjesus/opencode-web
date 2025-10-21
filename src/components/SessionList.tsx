@@ -182,7 +182,7 @@ export default function SessionList(props: SessionListProps) {
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
                         </svg>
                       </label>
-                      <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                      <ul tabindex="0" class="dropdown-content z-1 menu p-2 shadow bg-base-100 rounded-box w-52">
                         <li>
                           <a onClick={() => handleStartEdit(session.id, session.title)}>
                             Rename
@@ -206,7 +206,7 @@ export default function SessionList(props: SessionListProps) {
                 <div class="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="text"
-                    class="input input-bordered input-sm flex-1"
+                    class="input input-sm flex-1 w-full max-w-none"
                     value={editingTitle()}
                     onInput={(e) => setEditingTitle(e.currentTarget.value)}
                     onKeyPress={(e) => {

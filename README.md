@@ -27,7 +27,7 @@ A modern, responsive web interface for [OpenCode](https://github.com/sst/opencod
 
 ## Prerequisites
 
-- Node.js 20.19+ or 22.12+ (required for Vite 7)
+- Node.js 25+ (recommended)
 - npm
 - OpenCode API server running (default: `http://localhost:9999`)
 
@@ -62,6 +62,7 @@ npm preview
 The application runs as a static SPA. Users configure the API endpoint via the settings page, which is saved to localStorage.
 
 **To deploy:**
+
 - Build the app with `npm run build`
 - Deploy the `dist` folder to any static hosting service (Cloudflare Pages, GitHub Pages, etc.)
 - Users connect to their own OpenCode API server
@@ -69,26 +70,37 @@ The application runs as a static SPA. Users configure the API endpoint via the s
 ### Proxied-Backend Mode
 
 A Node.js helper that:
+
 - Launches `opencode serve` automatically
 - Proxies API requests to the local OpenCode instance
 - Serves the frontend at `/` and the API under `/api/*`
 - Auto-sets the web app API endpoint to `/api` (no manual config)
 
 Prerequisites:
+
 - `opencode` CLI installed and in PATH
 
 Usage:
+
 ```bash
+# run from project root
 npm run dev:proxy
+
+# or install a global binary once
+npm link  # from project root, installs `opencode-web-proxy` into your PATH
+
+# then from anywhere
+opencode-web-proxy
 ```
 
-Vite runs on http://localhost:3000 and proxies API requests to the detected OpenCode server.
+Vite runs on <http://localhost:3000> and proxies API requests to the detected OpenCode server.
 
 ## Configuration
 
 ### API Endpoint
 
 Configure the OpenCode API endpoint via the settings page (gear icon):
+
 - Default: `http://localhost:9999`
 - Supports any OpenCode API server with CORS enabled
 

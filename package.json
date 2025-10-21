@@ -12,12 +12,12 @@
     "dev:proxy": "tsx server/proxy.ts",
     "dev:proxy:here": "OPENCODE_SERVE_CWD=$PWD tsx server/proxy.ts",
     "build": "vite build",
-    "build:cf": "vite build --mode cloudflare",
     "preview": "vite preview"
   },
   "dependencies": {
     "@opencode-ai/sdk": "^0.15.10",
     "@solidjs/router": "^0.15.3",
+    "@tailwindcss/vite": "^4.1.15",
     "@tanstack/solid-virtual": "^3.13.12",
     "marked": "^16.0.0",
     "prismjs": "^1.30.0",
@@ -34,8 +34,7 @@
     "express": "^4.19.2",
     "http-proxy-middleware": "^3.0.0",
     "playwright": "^1.48.2",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.14",
+    "tailwindcss": "^4.1.15",
     "tsx": "^4.16.2",
     "typescript": "^5.6.2",
     "vite": "6.4.1",

@@ -1,4 +1,4 @@
-import { createOpencodeClient } from '@opencode-ai/sdk';
+import { createOpencodeClient } from '@opencode-ai/sdk/client';
 // Note: types fallback to any in this build env
 
 export type OpenCodeClient = ReturnType<typeof createOpencodeClient>;
