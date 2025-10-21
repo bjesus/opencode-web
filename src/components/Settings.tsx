@@ -1,4 +1,4 @@
-import { createSignal, For } from "solid-js";
+import { createSignal, For, onCleanup } from "solid-js";
 import {
   config,
   updateApiEndpoint,
@@ -17,11 +17,17 @@ export default function Settings(props: SettingsProps) {
     config().apiEndpoint || "http://localhost:9999",
   );
   const [selectedTheme, setSelectedTheme] = createSignal<Theme>(config().theme);
+  const initialTheme = config().theme;
   const [error, setError] = createSignal("");
+  let hasSaved = false;
+
+  const applyTheme = (theme: Theme) => {
+    document.documentElement.setAttribute("data-theme", theme);
+  };
 
   const handleThemeChange = (theme: Theme) => {
     setSelectedTheme(theme);
-    updateTheme(theme);
+    applyTheme(theme);
   };
 
   const handleSave = async () => {
@@ -41,6 +47,7 @@ export default function Settings(props: SettingsProps) {
 
       updateApiEndpoint(url);
       updateTheme(selectedTheme());
+      hasSaved = true;
       setError("");
       window.location.reload();
     } catch (e) {
