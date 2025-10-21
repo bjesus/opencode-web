@@ -2,6 +2,8 @@
 
 A modern, responsive web interface for [OpenCode](https://github.com/sst/opencode) built with SolidJS, featuring real-time message streaming, virtual scrolling for optimal performance, and a simple UI.
 
+<img width="2485" height="1555" alt="Screenshot 2025-10-21 at 12-22-58 OpenCode Web" src="https://github.com/user-attachments/assets/2a7f5e3c-de70-40ef-819b-44e86f1554bd" />
+
 ## Features
 
 - **Session Management** - Create, rename, delete, and fork sessions
